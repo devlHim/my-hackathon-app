@@ -28,7 +28,7 @@ export default function Home() {
         const parsed = JSON.parse(match[1]);
         setProductSchema(parsed);
       } catch (e) {
-        alert('Failed to parse JSON-LD');
+        alert(`Failed to parse JSON-LD${e}`);
       }
     } else {
       alert('No JSON-LD script found');
