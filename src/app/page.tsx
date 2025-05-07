@@ -13,35 +13,18 @@ type ProductSchemaType = {
 };
 
 export default function Home() {
-  const [htmlInput, setHtmlInput] = useState('');
+  const [htmlInput] = useState('');
   const [productSchema, setProductSchema] =
       useState<ProductSchemaType | null>(null);
   const [aiAnalysis, setAiAnalysis] = useState('');
   const [aiImprovedDescription, setAiImprovedDescription] = useState('');
   const [urlInput, setUrlInput] = useState('');
 
-  // const handleExtractSchema = () => {
-  //   const match = htmlInput.match(
-  //       /<script type="application\/ld\+json">([\s\S]*?)<\/script>/
-  //   );
-  //   if (match) {
-  //     try {
-  //       const parsed = JSON.parse(match[1]);
-  //       setProductSchema(parsed);
-  //     } catch (e) {
-  //       alert(`Failed to parse JSON-LD${e}`);
-  //     }
-  //   } else {
-  //     alert('No JSON-LD script found');
-  //   }
-  // };
-
   const handleFetchAndExtract= async () => {
     let html = htmlInput;
 
     if (urlInput) {
       try {
-        // const res = await fetch(`http://localhost:3001/api/fetch-html?url=${encodeURIComponent(urlInput)}`);
         const res = await fetch(`/api/fetch-html?url=${encodeURIComponent(urlInput)}`);
         html = await res.text();
       } catch (e) {
@@ -115,12 +98,6 @@ export default function Home() {
         <label className="block mb-2 font-semibold">
           Paste HTML with JSON-LD:
         </label>
-        {/*<textarea*/}
-        {/*    value={htmlInput}*/}
-        {/*    onChange={(e) => setHtmlInput(e.target.value)}*/}
-        {/*    rows={10}*/}
-        {/*    className="w-full p-3 border border-gray-300 rounded mb-3 font-mono"*/}
-        {/*/>*/}
 
         <input
             type="text"
