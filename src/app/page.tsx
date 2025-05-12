@@ -16,10 +16,11 @@ export default function Home() {
   const [htmlInput] = useState('');
   const [productSchema, setProductSchema] =
       useState<ProductSchemaType | null>(null);
-  const [aiImprovedDescription, setAiImprovedDescription] = useState('');
+  const [aiImprovedDescription, setAiImprovedDescription] = useState([]);
   const [urlInput, setUrlInput] = useState('');
   const [keywords, setKeywords] = useState([]);
-  const [approved, setApproved] = useState(false);
+  // const [approved, setApproved] = useState(false);
+  const [approvedIndex, setApprovedIndex] = useState(null);
 
   const handleFetchAndExtract= async () => {
     let html = htmlInput;
@@ -51,7 +52,6 @@ export default function Home() {
         }
       } catch (e) {
         console.error(e);
-        continue; // ignore parse errors and keep looking
       }
     }
 
@@ -76,32 +76,61 @@ export default function Home() {
 
     // Replace with actual API call
     try {
-      const res = await fetch('/api/analyse-description', {
+      const res = await fetch(`https://seo-optimzer-api.azurewebsites.net/api/Ai/SuggestProductDescription`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: urlInput })
+        headers: {
+          'accept': '*/*',
+          'subscriptionKey': '1e918fa3-859a-4920-944f-ac98b305dc23',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          productName: productSchema?.name,
+          productDescription: productSchema?.description,
+          commaDelimitedKeywords: keywords.join(', ')
+        })
       });
+      if (!res.ok) {
+        throw new Error('Failed to get AI description');
+      }
       const description = await res.json();
       setAiImprovedDescription(description || []);
-      setApproved(false); // reset on each fetch
+      // setApproved(false); // reset on each fetch
     } catch (err) {
-      console.error('Failed to fetch description:', err);
+      console.error('Could not fetch improved description', err);
     }
 
     // TEMP MOCK
-    setAiImprovedDescription(
-        `Introducing the ${productSchema?.name}, a top-rated, eco-friendly solution for daily use. Now with improved features and unmatched value.`
-    );
+    // setAiImprovedDescription(
+    //     `Introducing the ${productSchema?.name}, a top-rated, eco-friendly solution for daily use. Now with improved features and unmatched value.`
+    // );
   };
 
-  const handleCopy = () => {
-    const updated = {
+  // const handleCopy = () => {
+  //   const updated = {
+  //     ...productSchema,
+  //     description: aiImprovedDescription
+  //   };
+  //   navigator.clipboard.writeText(JSON.stringify(updated, null, 2));
+  //   setApproved(true);
+  //   alert('Copied the Improved Description to clipboard');
+  // };
+
+  const handleApprove = (index) => {
+    const selected = aiImprovedDescription[index];
+    const updatedSchema = {
       ...productSchema,
-      description: aiImprovedDescription
+      name: selected.title,
+      description: selected.description.replace(/<b>/g, '').replace(/<\/b>/g, '')
     };
-    navigator.clipboard.writeText(JSON.stringify(updated, null, 2));
-    setApproved(true);
-    alert('Copied the Improved Description to clipboard');
+    navigator.clipboard.writeText(JSON.stringify(updatedSchema, null, 2));
+    setApprovedIndex(index);
+    // setApproved(true);
+  };
+
+  const handleReject = (index) => {
+    setApprovedIndex(null);
+    console.log(index);
+    // setApproved(false);// You can also filter them out if needed
   };
 
   return (
@@ -175,33 +204,39 @@ export default function Home() {
             </div>
         )}
 
-        {aiImprovedDescription && (
+        {aiImprovedDescription.length > 0 && (
             <div className="mt-6 p-4 bg-gray-50 rounded-lg">
               <h2 className="text-xl font-semibold mb-2"> Improved Description</h2>
-              <p className="mb-4">{aiImprovedDescription}</p>
+              <div className="space-y-6 mt-8">
+                {aiImprovedDescription.map((sug, index) => (
+                    <div key={index} className="border p-4 rounded shadow-sm bg-white">
+                      <h3 className="text-lg font-semibold mb-2">{sug?.title}</h3>
+                      <p
+                          className="mb-2"
+                          dangerouslySetInnerHTML={{ __html: sug?.description }}
+                      />
+                      {approvedIndex === index ? (
+                          <p className="text-green-600 font-medium">✅ Approved & copied to clipboard</p>
+                      ) : (
+                          <div className="flex space-x-3">
+                            <button
+                                className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+                                onClick={() => handleApprove(index)}
+                            >
+                              Approve
+                            </button>
+                            <button
+                                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                                onClick={() => handleReject(index)}
+                            >
+                              Reject
+                            </button>
+                          </div>
+                      )}
+                    </div>
+                ))}
+              </div>
 
-              {!approved ? (
-                  <div className="flex space-x-3">
-                    <button
-                        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                        onClick={handleCopy}
-                    >
-                      Approve & Copy
-                    </button>
-
-                    <button
-                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                        onClick={() => {
-                          setAiImprovedDescription('');  // clear the suggestion
-                          // optionally, you could trigger a new AI call here
-                        }}
-                    >
-                      Reject
-                    </button>
-                  </div>
-              ) : (
-                  <p className="text-green-700 font-medium mt-2">✅ Description approved and copied!</p>
-              )}
             </div>
         )}
       </div>
